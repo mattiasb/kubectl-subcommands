@@ -1,0 +1,21 @@
+# To test these tools in Fedora and/or Ubuntu:
+#
+#   $ podman compose run --rm -it <fedora|ubuntu>
+---
+x-base: &base
+    working_dir: /root/project
+    volumes:
+      - ./:/root/project:ro
+      # Mount kubeconfig so we can access contexts.
+      - ${KUBECONFIG:-${HOME}/.kube/config}:/root/.kube/config
+
+services:
+  fedora:
+    <<: *base
+    profiles: [fedora]
+    image: docker.io/library/fedora:43
+
+  ubuntu:
+    <<: *base
+    profiles: [ubuntu]
+    image: docker.io/library/ubuntu:25.10
