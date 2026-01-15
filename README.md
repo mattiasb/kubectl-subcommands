@@ -22,8 +22,8 @@ Run a `kubectl` command on each context in your Kubernetes configuration.
 
 #### Caveats
 
-- Will pipe the output to `pr -to 4` to indent by 4 which means this won't work
-  for interactive commands!
+- Will pipe the output to `sed 's/^/ /'` to indent by 4 which means this won't
+  work for interactive commands!
 - BASH completion doesn't work!
 
 ### `kubectl context`
