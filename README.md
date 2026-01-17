@@ -1,4 +1,4 @@
-# Kubectl Subcommands
+# Kubectl Sub-commands
 
 Various [kubectl][] sub-commands that I've made and use daily.
 
@@ -6,17 +6,12 @@ Various [kubectl][] sub-commands that I've made and use daily.
 
 Just run `make install`.
 
-## Configuration
+If you install as a regular user on Ubuntu and/or Debian you might have to add
+`~/.local/bin/` to your PATH.
 
-You might want to make BASH ignore `kubectl-` and `kubectl_` sub-commands when
-completing commands by adding the following to your `~/.bashrc`:
-```bash
-export EXECIGNORE="${EXECIGNORE:+${EXECIGNORE}:}*/kubectl-*:*/kubectl_*"
-```
+## Sub-commands
 
-## Available commands
-
-## `kubectl each`
+### `kubectl each`
 
 Run a `kubectl` command on each context in your Kubernetes configuration. 
 
@@ -35,6 +30,14 @@ A more ergonomic way of switching `kubectl` context than manual calls to
 
 A more ergonomic way of switching `kubectl` namespace than manual calls to
 `kubectl config set-context --current --namespace=<NAMESPACE>`.
+
+## Configuration
+
+You might want to make BASH ignore `kubectl-` and `kubectl_` sub-commands when
+completing commands by adding the following to your `~/.bashrc`:
+```bash
+export EXECIGNORE="${EXECIGNORE:+${EXECIGNORE}:}*/kubectl-*:*/kubectl_*"
+```
 
 <!----------------------------------------------------------------------------->
 
