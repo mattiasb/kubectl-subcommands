@@ -4,10 +4,33 @@ Various [kubectl][] sub-commands that I've made and use daily.
 
 ## Install
 
-Just run `make install`.
+### Fedora
 
-If you install as a regular user on Ubuntu and/or Debian you might have to add
-`~/.local/bin/` to your PATH.
+1. Install `kubectl`:
+
+    ```console
+    $ sudo dnf install kubernetes1.35-client # Or a version matching the cluster
+    ```
+
+2. Then:
+
+    ```console
+    $ sudo dnf install make wl-copy fzf getopt jq
+    $ make install
+    ```
+
+### Ubuntu / Debian
+
+1. Install `kubectl` [from kubernetes.io][kubectl-install]:
+2. Then:
+    ```console
+    $ sudo apt update
+    $ sudo apt install make wl-clipboard fzf jq
+    $ make install
+    ```
+
+**NOTE**: If you install as a regular user you might have to add `~/.local/bin/`
+          to your PATH!
 
 ## Sub-commands
 
@@ -42,3 +65,4 @@ export EXECIGNORE="${EXECIGNORE:+${EXECIGNORE}:}*/kubectl-*:*/kubectl_*"
 <!----------------------------------------------------------------------------->
 
 [kubectl]: https://kubernetes.io/docs/reference/kubectl/
+[kubectl-install]: https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/
