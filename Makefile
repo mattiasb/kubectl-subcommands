@@ -45,7 +45,7 @@ bindir             ?= $(prefix)/bin
 ################################################################################
 ## Other constants
 
-os-run-deps = $(addprefix /usr/bin/, fzf getopt jq kubectl wl-copy)
+os-run-deps = $(addprefix /usr/bin/, fzf getopt jq kubectl)
 os-dev-deps = $(addprefix /usr/bin/, git shellcheck)
 os-deps     = $(os-dev-deps) $(os-run-deps)
 
