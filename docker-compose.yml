@@ -1,6 +1,6 @@
 # To test these tools in Fedora and/or Ubuntu:
 #
-#   $ podman compose run --rm -it <fedora|ubuntu>
+#   $ podman compose run --rm -it <fedora|ubuntu|ubuntu-24.04>
 ---
 x-base: &base
     working_dir: /root/project
@@ -19,3 +19,8 @@ services:
     <<: *base
     profiles: [ubuntu]
     image: docker.io/library/ubuntu:25.10
+
+  ubuntu-24.04:
+    <<: *base
+    profiles: [ubuntu-24.04]
+    image: docker.io/library/ubuntu:24.04
