@@ -6,20 +6,6 @@ set -o pipefail
 
 ################################################################################
 
-function usage {
-    cat <<EOM
-Switch kubectl context.
-
-Usage: $(basename "${0}" | tr "-" " ") [-h | --help] [CONTEXT|-]
-
-  -h, --help    Show this help message.
-
-Where CONTEXT is an optional kubectl context to switch to. If unset you'll get
-an fzf menu to choose context interactively. If set to a single '-' character
-will instead *unset* the current context.
-EOM
-}
-
 function get-contexts {
     kubectl config get-contexts --no-headers -o name
 }
@@ -46,24 +32,67 @@ function set-context {
     esac
 }
 
-function switch-context {
-    local contexts
+################################################################################
+
+function usage {
+    cat <<EOM
+Switch kubectl context.
+
+Usage: $(basename "${0}" | tr "-" " ") [-h | --help] [ -l | --list ] [CONTEXT|-]
+
+  -h, --help    Show this help message.
+
+Where CONTEXT is an optional kubectl context to switch to. If unset you'll get
+an fzf menu to choose context interactively. If set to a single '-' character
+will instead *unset* the current context.
+EOM
+}
+
+function context-main {
+    local o name opts long
+    local -a contexts=()
+    local opt_help opt_list
+
+    name="$(basename "${0}")"
+    opts="hl"
+    long="help,list"
+    o="$(getopt -o "${opts}" -l "${long}" -n "${name}" -- "${@}")"
+    eval set -- "${o}"
+
+    while true; do
+        case "${1}" in
+            -h | --help) shift; opt_help=true                                 ;;
+            -l | --list) shift; opt_list=true                                 ;;
+            -- )         shift; break                                         ;;
+            * )                 break                                         ;;
+        esac
+    done
+
+    if [ "${opt_help:-}" = true ]; then
+        usage
+        exit
+    fi
+
+    if [ "${opt_list:-}" = true ]; then
+        get-contexts
+        exit
+    fi
 
     case "${1:-}" in
-        -h | --help) usage                                                    ;;
-        "") mapfile -t contexts < <(get-contexts); wait $!
-            set-context "$( printf "%s\n" "${contexts[@]}"                     \
+        '')   mapfile -t contexts < <(get-contexts); wait $!
+              set-context "$( printf "%s\n" "${contexts[@]}"                   \
                           | fzf --ansi --height $(( ${#contexts[@]} + 2))      \
                           )"
-            ;;
-        *)  set-context "${1}"                                                ;;
+              ;;
+        *)    set-context "${1}"
+              ;;
     esac
 }
 
 function main {
     case "$(basename "${0}")" in
         kubectl_complete-*)   do-complete    "${@}" ;;
-        *)                    switch-context "${@}" ;;
+        *)                    context-main   "${@}" ;;
     esac
 }
 
