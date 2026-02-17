@@ -54,6 +54,10 @@ A more ergonomic way of switching `kubectl` context than manual calls to
 A more ergonomic way of switching `kubectl` namespace than manual calls to
 `kubectl config set-context --current --namespace=<NAMESPACE>`.
 
+### `kubectl secret`
+
+Lets you list, copy and show fields in secrets. Does auto completion as well.
+
 ## Configuration
 
 You might want to make BASH ignore `kubectl-` and `kubectl_` sub-commands when
