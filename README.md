@@ -58,6 +58,10 @@ A more ergonomic way of switching `kubectl` namespace than manual calls to
 
 Lets you list, copy and show fields in secrets. Does auto completion as well.
 
+### `kubectl pv`
+
+Get a PersistentVolume from a `PersistentVolumeClaim`.
+
 ## Configuration
 
 You might want to make BASH ignore `kubectl-` and `kubectl_` sub-commands when

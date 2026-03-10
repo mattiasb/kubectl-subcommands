@@ -1,0 +1,107 @@
+#!/bin/bash
+
+set -euo pipefail
+
+
+################################################################################
+
+function error {
+    echo "ERROR: ${*}" >/dev/stderr
+}
+
+function error-usage {
+    error "${*}"
+    echo
+    usage
+    return 2
+}
+
+function kubectl-flags {
+    kubectl get --help                                                         \
+        | awk '/^Options:/{flag=1;next} /Usage:/{flag=0} flag'                 \
+        | fmt -sw 80                                                           \
+        | expand -i                                                            \
+        | cut -c 3-
+}
+
+function usage {
+    cat <<EOM
+Get a PersistentVolume from a PersistentVolumeClaim.
+
+Usage: $(basename "${0}") [-h | --help] <PVC> [GET-FLAGS]
+
+  -h, --help    Show this help message.
+
+Other Flags (passed verbatim to kubectl get pv):
+
+$(kubectl-flags)
+
+Use "kubectl options" to get a list of global command-line options that applies
+to all commands.
+
+EOM
+}
+
+################################################################################
+
+function get-pvcs {
+    kubectl get pvc -o name | sed -r 's|persistentvolumeclaim/||gi' | sort
+}
+
+function do-complete {
+    if [ "${#}" -lt 2 ]; then
+        get-pvcs
+    else
+        # It's very unclear why ":4" specifically turns off further completions.
+        # But it does.
+        # See: https://github.com/kubernetes/kubernetes/commit/09bbe37ce6043b0e
+        echo :4
+    fi
+}
+
+################################################################################
+
+function get-pv {
+    local pvc jp
+
+    pvc="${1}"
+    jp="{.items[?(@.spec.claimRef.name==\"${pvc}\")].metadata.name}{\"\n\"}"
+
+    kubectl get pv -o jsonpath="${jp}"
+}
+
+function pv-of-pvc {
+    local pvc
+    local -a args
+
+    pvc="${1}"
+    args=( "${@:2}" )
+    pv="$(get-pv "${pvc}")"
+
+    kubectl get pv "${args[@]}" "${pv}"
+}
+
+################################################################################
+
+function pv-main {
+    local pvc
+
+    if [[ " ${*} " == *" --help "* ]] || [[ " ${*} " == *" -h "* ]]; then
+        usage
+        exit
+    fi
+
+    case "${1:-}" in
+        ''|-*) error-usage "Missing PVC"                                      ;;
+        *)     pv-of-pvc "${@}"                                               ;;
+    esac
+}
+
+function main {
+    case "$(basename "${0}")" in
+        kubectl_complete-*)   do-complete    "${@}" ;;
+        *)                    pv-main        "${@}" ;;
+    esac
+}
+
+main "${@}"; exit

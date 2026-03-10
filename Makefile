@@ -51,7 +51,7 @@ os-deps     = $(os-dev-deps) $(os-run-deps)
 
 libs        = $(notdir $(wildcard src/lib.*))
 bins        = $(filter-out $(libs), $(notdir $(wildcard src/*)))
-comps       = kubectl-context kubectl-namespace kubectl-secret
+comps       = kubectl-context kubectl-namespace kubectl-pv kubectl-secret
 
 targets     = $(addprefix $(datarootdir)/, $(libs)) \
               $(addprefix $(bindir)/,      $(bins)) \
