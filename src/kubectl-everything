@@ -1,0 +1,128 @@
+#!/bin/bash
+
+set -euo pipefail
+
+
+################################################################################
+
+function error {
+    echo "ERROR: ${*}" >/dev/stderr
+}
+
+# shellcheck disable=SC2329
+function error-usage {
+    error "${*}"
+    echo
+    usage
+    return 2
+}
+
+################################################################################
+
+function k8s {
+    kubectl ${OPT_CTX:+--context=${OPT_CTX}}                                   \
+            ${OPT_NS:+--namespace=${OPT_NS}}                                   \
+            "${@}"
+}
+
+function k8s-logged-in {
+    if ! out="$(k8s auth whoami 2>&1)"; then
+        error "Not logged in!"
+        echo
+        # shellcheck disable=SC2001
+        echo "${out}"                                                          \
+            | fmt -sw 80                                                       \
+            | expand -i                                                        \
+            |& sed 's/^/  /' >&2
+        return 2
+    fi
+}
+
+################################################################################
+
+function usage {
+    local name
+
+    name=$(basename "${0}" | tr "-" " ")
+
+    cat <<EOM
+Get ALL resources in a namespace.
+
+Usage: ${name} [-h | --help] [ -c <CTX> ] [ -n <NAMESPACE> ] 
+
+  -h, --help            Show this help message.
+  -c, --context=<CTX>   Use CTX as kubectl context.
+  -n, --namespace=<NS>  Use NS as namespace.
+
+EOM
+}
+function get-all-kinds {
+    k8s api-resources --verbs=list --namespaced -o name
+}
+
+function show-everything {
+    local kind
+    local -a kinds=()
+
+    mapfile -t kinds < <(get-all-kinds); wait $!
+
+    echo
+    for kind in "${kinds[@]}"; do
+        out="$(k8s get --show-kind --ignore-not-found "${kind}")"
+        if [ -z "${out}"  ]; then
+            continue
+        fi
+
+        echo "${kind^^}"
+        echo
+        # shellcheck disable=SC2001
+        echo "${out}" |& sed 's/^/  /'
+        echo
+    done
+}
+
+function everything-main {
+    local o name opts long
+
+    name="$(basename "${0}")"
+    opts="hc:n:"
+    long="help,context:,namespace:"
+    o="$(getopt -o "${opts}" -l "${long}" -n "${name}" -- "${@}")"
+    eval set -- "${o}"
+
+    while true; do
+        case "${1}" in
+            -h | --help)
+                usage
+                exit
+                ;;
+
+            -c | --context)
+                OPT_CTX="${2}"
+                shift 2
+                ;;
+
+            -n | --namespace)
+                OPT_NS="${2}"
+                shift 2
+                ;;
+
+            -- ) shift; break ;;
+            * ) break ;;
+        esac
+    done
+    export OPT_CTX
+    export OPT_NS
+
+    k8s-logged-in
+    show-everything
+}
+
+function main {
+    case "$(basename "${0}")" in
+        kubectl_complete-*)   do-complete      "${@}" ;;
+        *)                    everything-main  "${@}" ;;
+    esac
+}
+
+main "${@}"; exit

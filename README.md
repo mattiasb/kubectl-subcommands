@@ -62,6 +62,10 @@ Lets you list, copy and show fields in secrets. Does auto completion as well.
 
 Get a PersistentVolume from a `PersistentVolumeClaim`.
 
+### `kubectl everything`
+
+Get *ALL* resources in a namespace.
+
 ## Configuration
 
 You might want to make BASH ignore `kubectl-` and `kubectl_` sub-commands when
