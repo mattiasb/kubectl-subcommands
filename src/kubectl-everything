@@ -53,6 +53,7 @@ Usage: ${name} [-h | --help] [ -c <CTX> ] [ -n <NAMESPACE> ]
   -h, --help            Show this help message.
   -c, --context=<CTX>   Use CTX as kubectl context.
   -n, --namespace=<NS>  Use NS as namespace.
+  -e, --events          Include events in output. Default: no.
 
 EOM
 }
@@ -68,6 +69,15 @@ function show-everything {
 
     echo
     for kind in "${kinds[@]}"; do
+        if [ "${OPT_EVENTS}" = false ]; then
+            case "${kind}" in
+                events|events.events.k8s.io)
+                    continue
+                    ;;
+                *)  ;;
+            esac
+        fi
+
         out="$(k8s get --show-kind --ignore-not-found "${kind}")"
         if [ -z "${out}"  ]; then
             continue
@@ -85,11 +95,12 @@ function everything-main {
     local o name opts long
 
     name="$(basename "${0}")"
-    opts="hc:n:"
-    long="help,context:,namespace:"
+    opts="hc:n:e"
+    long="help,context:,namespace:,events"
     o="$(getopt -o "${opts}" -l "${long}" -n "${name}" -- "${@}")"
     eval set -- "${o}"
 
+    OPT_EVENTS=false
     while true; do
         case "${1}" in
             -h | --help)
@@ -107,12 +118,18 @@ function everything-main {
                 shift 2
                 ;;
 
+            -e | --events)
+                OPT_EVENTS=true
+                shift
+                ;;
+
             -- ) shift; break ;;
             * ) break ;;
         esac
     done
     export OPT_CTX
     export OPT_NS
+    export OPT_EVENTS
 
     k8s-logged-in
     show-everything
