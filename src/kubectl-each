@@ -39,7 +39,7 @@ function main {
     for env in "${contexts[@]}"; do
         echo "${env^^}"
         echo
-        kubectl --context="${env}" "${@}" |& sed 's/^/  /'
+        kubectl "${@}" --context="${env}" |& sed 's/^/  /'
         echo
     done
 }
