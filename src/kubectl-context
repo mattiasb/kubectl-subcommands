@@ -11,8 +11,11 @@ function get-contexts {
 }
 
 function do-complete {
-    if [ "${#}" -lt 2 ]; then
-        get-contexts
+    local -a contexts=()
+
+    mapfile -t contexts < <(get-contexts); wait $!
+    if [ "${#}" -lt 2 ] && [ "${#contexts[@]}" -gt 0 ]; then
+        printf '%s\n' "${contexts[@]}"
         return
     fi
 

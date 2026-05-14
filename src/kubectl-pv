@@ -49,8 +49,11 @@ function get-pvcs {
 }
 
 function do-complete {
-    if [ "${#}" -lt 2 ]; then
-        get-pvcs
+    local -a pvcs=()
+
+    mapfile -t pvcs < <(get-pvcs); wait $!
+    if [ "${#}" -lt 2 ] && [ "${#pvcs[@]}" -gt 0 ]; then
+        printf '%s\n' "${pvcs[@]}"
         return
     fi
 

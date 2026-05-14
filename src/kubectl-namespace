@@ -45,8 +45,11 @@ function set-namespace {
 }
 
 function do-complete {
-    if [ "${#}" -lt 2 ] && logged-in; then
-        get-namespaces
+    local -a namespaces=()
+
+    mapfile -t namespaces < <(get-namespaces); wait $!
+    if [ "${#}" -lt 2 ] && [ "${#namespaces[@]}" -gt 0 ]; then
+        printf '%s\n' "${namespaces[@]}"
         return
     fi
 
