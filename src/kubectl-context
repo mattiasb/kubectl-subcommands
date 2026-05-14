@@ -13,12 +13,13 @@ function get-contexts {
 function do-complete {
     if [ "${#}" -lt 2 ]; then
         get-contexts
-    else
-        # It's very unclear why ":4" specifically turns off further completions.
-        # But it does.
-        # See: https://github.com/kubernetes/kubernetes/commit/09bbe37ce6043b0e
-        echo :4
+        return
     fi
+
+    # It's very unclear why ":4" specifically turns off further completions.
+    # But it does.
+    # See: https://github.com/kubernetes/kubernetes/commit/09bbe37ce6043b0e
+    echo :4
 }
 
 function set-context {
