@@ -41,6 +41,7 @@ Switch kubectl context.
 Usage: $(basename "${0}" | tr "-" " ") [-h | --help] [ -l | --list ] [CONTEXT|-]
 
   -h, --help    Show this help message.
+  -l, --list    List contexts.
 
 Where CONTEXT is an optional kubectl context to switch to. If unset you'll get
 an fzf menu to choose context interactively. If set to a single '-' character
