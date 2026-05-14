@@ -66,6 +66,7 @@ function usage {
 Usage: ${name} [-h | --help] [ -l | --list ] [NAMESPACE|-]
 
   -h, --help    Show this help message.
+  -l, --list    List namespaces.
 
 EOM
 }
