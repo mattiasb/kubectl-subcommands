@@ -2,16 +2,49 @@
 
 set -euo pipefail
 
+declare -A COMMANDS=(
+    [api-resources]=""
+    [api-versions]=""
+    [cluster-info]=""
+    [describe]=""
+    [diff]=""
+    [events]=""
+    [get]=""
+    [version]=""
+)
 
 ################################################################################
 
-function usage {
-    cat <<EOM
-Run a kubectl command over all contexts.
 
-Usage: $(basename "${0}" | tr "-" " ") [-h | --help] <RESOURCE> [ARGS]
+function error {
+    echo "ERROR: ${*}" >/dev/stderr
+}
+
+function error-usage {
+    error "${*}"
+    echo
+    usage
+    return 2
+}
+
+function usage {
+    local name
+
+    name="$(basename "${0}" | tr "-" " ")"
+
+    cat <<EOM
+Run a (non-destructive) kubectl command over all contexts.
+
+Usage: ${name} [-h | --help] <CMD> [ARGS]
 
   -h, --help    Show this help message.
+
+Where CMD is one of:
+
+$(printf '  %s\n' "${!COMMANDS[@]}")
+
+NOTE: ${name} only allows *seemingly* non-destructive commands.
+      This only checked through an allow-list so use with caution!
 
 EOM
 }
@@ -29,19 +62,23 @@ function get-contexts {
 }
 
 function main {
-    local ctx resource
-    local -a contexts
-
-    resource="${1:-}"
-    if [ -z "${resource}" ]; then
-        usage
-        return 2
-    fi
+    local ctx cmd
+    local -a contexts args
 
     if [[ " ${*} " == *" --help "* ]] || [[ " ${*} " == *" -h "* ]]; then
         usage
         return
     fi
+
+    cmd="${1:-}"
+    if [ -z "${cmd}" ]; then
+        error-usage "Missing command!"
+    fi
+    if [ ! -v "COMMANDS[${cmd}]" ]; then
+        error-usage "Unsupported command '${cmd}'!"
+    fi
+
+    args=( "${@:2}" )
 
     mapfile -t contexts < <(get-contexts); wait $!
 
@@ -56,8 +93,7 @@ function main {
             continue
         fi
 
-        kubectl --context="${ctx}"                                             \
-                get "${resource}" |& sed 's/^/  /'
+        kubectl --context="${ctx}" "${cmd}" "${args[@]}" |& sed 's/^/  /'
         echo
     done
 }
