@@ -21,7 +21,7 @@ function get-contexts {
 }
 
 function main {
-    local resource
+    local ctx resource
     local -a contexts
 
     resource="${1:-}"
@@ -38,8 +38,8 @@ function main {
     mapfile -t contexts < <(get-contexts); wait $!
 
     echo
-    for env in "${contexts[@]}"; do
-        echo "${env^^}"
+    for ctx in "${contexts[@]}"; do
+        echo "${ctx^^}"
         echo
 
         kubectl --context="${ctx}"                                             \
