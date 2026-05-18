@@ -16,6 +16,14 @@ Usage: $(basename "${0}" | tr "-" " ") [-h | --help] <RESOURCE> [ARGS]
 EOM
 }
 
+function k8s-logged-in {
+    local ctx
+
+    ctx="${1}"
+
+    kubectl --context="${ctx}" --request-timeout 3s auth whoami &>/dev/null
+}
+
 function get-contexts {
     kubectl config get-contexts --no-headers -o name
 }
@@ -41,6 +49,12 @@ function main {
     for ctx in "${contexts[@]}"; do
         echo "${ctx^^}"
         echo
+
+        if ! k8s-logged-in "${ctx}"; then
+            echo "  Failed to connect!"
+            echo
+            continue
+        fi
 
         kubectl --context="${ctx}"                                             \
                 get "${resource}" |& sed 's/^/  /'
