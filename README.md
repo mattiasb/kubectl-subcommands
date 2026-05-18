@@ -36,7 +36,7 @@ Various [kubectl][] sub-commands that I've made and use daily.
 
 ### `kubectl each`
 
-Run a `kubectl` command on each context in your Kubernetes configuration. 
+Get resources from each context in your Kubernetes configuration.
 
 #### Caveats
 

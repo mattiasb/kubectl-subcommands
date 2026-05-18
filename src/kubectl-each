@@ -9,7 +9,7 @@ function usage {
     cat <<EOM
 Run a kubectl command over all contexts.
 
-Usage: $(basename "${0}" | tr "-" " ") [-h | --help] [ARGS]
+Usage: $(basename "${0}" | tr "-" " ") [-h | --help] <RESOURCE> [ARGS]
 
   -h, --help    Show this help message.
 
@@ -21,9 +21,11 @@ function get-contexts {
 }
 
 function main {
+    local resource
     local -a contexts
 
-    if [ "${#}" -lt 1 ]; then
+    resource="${1:-}"
+    if [ -z "${resource}" ]; then
         usage
         return 2
     fi
@@ -39,7 +41,9 @@ function main {
     for env in "${contexts[@]}"; do
         echo "${env^^}"
         echo
-        kubectl "${@}" --context="${env}" |& sed 's/^/  /'
+
+        kubectl --context="${ctx}"                                             \
+                get "${resource}" |& sed 's/^/  /'
         echo
     done
 }
