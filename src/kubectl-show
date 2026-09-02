@@ -1,0 +1,187 @@
+#!/bin/bash
+
+set -euo pipefail
+
+: "${KUBECTL_SHOW_WATCH_FLAGS:=-tcw}"
+: "${KUBECTL_SHOW_CONTEXT:=}"
+: "${KUBECTL_SHOW_NAMESPACE:=}"
+
+export KUBECTL_SHOW_WATCH_FLAGS
+export KUBECTL_SHOW_CONTEXT
+export KUBECTL_SHOW_NAMESPACE
+
+: "${KUBECTL_SHOW_HEADER:=}"
+: "${KUBECTL_SHOW_HEADER_COLOR_BG:=26}"
+: "${KUBECTL_SHOW_HEADER_COLOR_FG:=15}"
+
+export KUBECTL_SHOW_HEADER
+export KUBECTL_SHOW_HEADER_COLOR_BG
+export KUBECTL_SHOW_HEADER_COLOR_FG
+
+################################################################################
+## Utils
+
+function string-join {
+    local sep
+
+    sep="${1}"
+    case "${#}" in
+        0)                                                                    ;;
+        1) echo "${2}"                                                        ;;
+        *) echo "${2}$(printf "${sep}%s" "${@:3}")"                           ;;
+    esac
+}
+
+function highlight {
+    grep -iE --color=always -e "^" -e "($(string-join '|' "${@}"))"
+}
+
+function header {
+    local cols
+
+    context="${1}"
+    namespace="${2:-}"
+
+    cols="$(( 2 + $(tput cols)))"
+
+    tput setab "${KUBECTL_SHOW_HEADER_COLOR_BG}"
+    tput setaf "${KUBECTL_SHOW_HEADER_COLOR_FG}"
+    printf "%-${cols}s\n" " ⎈ ${context}${2:+"[${2}]"}"
+    tput sgr0
+
+    echo
+}
+
+################################################################################
+## Commands
+
+function k8s {
+    kubectl ${KUBECTL_SHOW_CONTEXT:+--context="${KUBECTL_SHOW_CONTEXT}"}       \
+            ${KUBECTL_SHOW_NAMESPACE:+--namespace="${KUBECTL_SHOW_NAMESPACE}"} \
+            "${@}"
+}
+
+function k8s-show {
+    local resource
+
+    for resource in "${@}"; do
+        echo "${resource^^}"
+        echo
+        k8s get "${resource}" | sed 's/^/  /'
+        echo
+    done | highlight starterror error failed fail
+}
+
+function k8s-namespace {
+    local context
+
+    context="${1:-}"
+
+    if [ -n "${KUBECTL_SHOW_NAMESPACE:-}" ]; then
+        echo "${KUBECTL_SHOW_NAMESPACE}"
+    elif [ -n "${context}" ]; then
+        k8s config view --minify -o jsonpath='{..namespace}' ||:
+    fi
+}
+
+function k8s-context {
+    echo "${KUBECTL_SHOW_CONTEXT:-$(kubectl config current-context)}"
+}
+
+function k8s-header {
+    local context namespace
+
+    if [ "${KUBECTL_SHOW_HEADER:-}" != "1" ]; then
+        return
+    fi
+    context="$(k8s-context)"
+    namespace="$(k8s-namespace "${context}")"
+
+    header "${context}" "${namespace:-default}"
+}
+
+################################################################################
+##  Main
+
+function usage {
+    cat <<EOM
+Usage: $(basename "${0}") [-h | --help] <RESOURCE>...
+
+  -h, --help            Show this help message.
+  -w, --watch           Watch for changes.
+  -c, --context=<CTX>   Override current context.
+  -n, --namespace=<NS>  Override current context namespace.
+      --[no-]header     Show a context and namespace header.
+                        Default: true in watch mode and false otherwise.
+
+Environment:
+
+ KUBECTL_SHOW_WATCH_FLAGS  —  Set flags passed to "watch". Default: "-tcw"
+ KUBECTL_SHOW_CONTEXT      —  Set current context override.
+ KUBECTL_SHOW_NAMESPACE    —  Set current context namespace override.
+ KUBECTL_SHOW_HEADER       —  If '1' show a '<CONTEXT>[<NAMESPACE>]' header.
+EOM
+}
+
+function main {
+    local o name opts long
+    local opt_watch
+    local -a flags=()
+
+    name="$(basename "${0}")"
+    opts="hwn:c:"
+    long="help,watch,header,no-header,namespace:,context:"
+    o="$(getopt -o "${opts}" -l "${long}" -n "${name}" -- "${@}")"
+    eval set -- "${o}"
+
+    opt_watch=false
+    while true; do
+        case "${1}" in
+            -h | --help)
+                usage
+                exit
+                ;;
+
+            -w | --watch)
+                opt_watch=true
+                shift
+                ;;
+
+            -n | --namespace)
+                KUBECTL_SHOW_NAMESPACE="${2}"
+                shift 2
+                ;;
+
+            -c | --context)
+                KUBECTL_SHOW_CONTEXT="${2}"
+                shift 2
+                ;;
+
+            --header)
+                KUBECTL_SHOW_HEADER=1
+                shift
+                ;;
+
+            --no-header)
+                KUBECTL_SHOW_HEADER=0
+                shift
+                ;;
+
+            -- ) shift; break ;;
+            * ) break ;;
+        esac
+    done
+
+    if [ "${opt_watch}" = true ]; then
+        export KUBECTL_SHOW_HEADER="${KUBECTL_SHOW_HEADER:-1}"
+
+        IFS=' ' read -ra flags <<< "${KUBECTL_SHOW_WATCH_FLAGS}"
+        watch "${flags[@]}" "kubectl show ${*}"
+        return
+    fi
+
+    k8s-header
+    k8s-show "${@}"
+}
+
+main "${@}"; exit

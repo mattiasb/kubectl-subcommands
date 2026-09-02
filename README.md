@@ -66,6 +66,12 @@ Get a PersistentVolume from a `PersistentVolumeClaim`.
 
 Get *ALL* resources in a namespace.
 
+### `kubectl show`
+
+Show several types of resources like multiple calls to `kubectl get` would but
+with nice formatting, and with highlighting of certain errors. Also has a watch
+flag for following changes to these resources.
+
 ## Configuration
 
 You might want to make BASH ignore `kubectl-` and `kubectl_` sub-commands when
