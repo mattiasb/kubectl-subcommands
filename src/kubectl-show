@@ -48,8 +48,6 @@ function header {
     tput setaf "${KUBECTL_SHOW_HEADER_COLOR_FG}"
     printf "%-${cols}s\n" " ⎈ ${context}${2:+"[${2}]"}"
     tput sgr0
-
-    echo
 }
 
 ################################################################################
@@ -65,10 +63,10 @@ function k8s-show {
     local resource
 
     for resource in "${@}"; do
+        echo
         echo "${resource^^}"
         echo
         k8s get "${resource}" | sed 's/^/  /'
-        echo
     done | highlight starterror error failed fail
 }
 
