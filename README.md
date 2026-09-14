@@ -66,6 +66,10 @@ Get a PersistentVolume from a `PersistentVolumeClaim`.
 
 Get *ALL* resources in a namespace.
 
+### `kubectl capacity`
+
+Show memory and CPU capacity of all cluster nodes.
+
 ### `kubectl show`
 
 Show several types of resources like multiple calls to `kubectl get` would but

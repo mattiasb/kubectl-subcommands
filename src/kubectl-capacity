@@ -1,0 +1,74 @@
+#!/bin/bash
+
+set -euo pipefail
+
+: "${KUBECTL_CONTEXT:=}"
+
+export KUBECTL_CONTEXT
+
+################################################################################
+
+function show-capacity {
+    local query
+
+    query=' .items[]
+          | [ .metadata.name
+            , .status.capacity.cpu
+            , .status.capacity.memory
+            ]
+          | @tsv
+          '
+
+    kubectl ${KUBECTL_CONTEXT:+--context "${KUBECTL_CONTEXT}"} get node -o json\
+        | jq -r "${query}"                                                     \
+        | numfmt --field 3 --from iec-i --to iec-i --format '%10f'             \
+        | column -t -N "NAME,CPU,MEMORY"
+}
+
+
+################################################################################
+## Main
+
+function usage {
+    cat <<EOM
+Show capacity of all nodes.
+
+Usage: $(basename "${0}") [-h | --help]
+
+  -h, --help    Show this help message.
+  -c, --context=<CTX>   Override current context.
+  -n, --namespace=<NS>  Override current context namespace.
+
+EOM
+}
+
+function main {
+    local o name opts long
+
+    name="$(basename "${0}")"
+    opts="hc:"
+    long="help,context:"
+    o="$(getopt -o "${opts}" -l "${long}" -n "${name}" -- "${@}")"
+    eval set -- "${o}"
+
+    while true; do
+        case "${1}" in
+            -h | --help)
+                usage
+                exit
+                ;;
+
+            -c | --context)
+                KUBECTL_CONTEXT="${2}"
+                shift 2
+                ;;
+
+            -- ) shift; break ;;
+            * ) break ;;
+        esac
+    done
+
+    show-capacity
+}
+
+main "${@}"; exit
