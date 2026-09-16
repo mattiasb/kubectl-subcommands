@@ -1,0 +1,113 @@
+#!/bin/bash
+
+set -euo pipefail
+
+: "${KUBECTL_DOC_CONTEXT:=}"
+export KUBECTL_DOC_CONTEXT
+
+################################################################################
+## Utils
+
+# shellcheck disable=SC2329
+function debug {
+    if [ -v DEBUG ]; then
+        echo "${FUNCNAME[1]:+${FUNCNAME[1]}: }${*}" >/dev/stderr
+    fi
+}
+
+function error {
+    echo "ERROR: ${*}" >/dev/stderr
+}
+
+function jsonpath {
+    local manifest line kind query path
+
+    manifest="${1}"
+    line="${2:-}"
+
+    manifest="$(yq -p auto -o yaml -P -M "${manifest}")"
+    kind="$(yq '.kind' <<< "${manifest}" 2>/dev/null)"
+
+    if [ -z "${line}" ]; then
+        echo -n "${kind,,}"
+        return
+    fi
+
+    query='.. | { ( key | line): parent | path | join(".") }'
+    path="$(yq "${query}" <<< "${manifest}" | grep -vE '0:' | yq ".${line}")"
+
+    echo "${kind,,}${path:+.${path}}"
+}
+
+################################################################################
+## K8S
+
+function k8s {
+    kubectl ${KUBECTL_DOC_CONTEXT:+--context="${KUBECTL_DOC_CONTEXT}"} "${@}"
+}
+
+################################################################################
+## Main
+
+function usage {
+    cat <<EOM
+Usage: $(basename "${0}") [-h | --help] [ -c <CTX> ] <MANIFEST> [LINE]
+
+  -h, --help             Show this help message.
+  -c, --context=<CTX>   Override current context.
+
+Where
+
+  MANIFEST  —  Path to a *single-document* Kubernetes manifest.
+  LINE      —  A line number in the manifest.
+
+EOM
+}
+
+function main {
+    local o name opts long
+    local manifest line path
+
+    name="$(basename "${0}")"
+    opts="hc:"
+    long="help,context:"
+    o="$(getopt -o "${opts}" -l "${long}" -n "${name}" -- "${@}")"
+    eval set -- "${o}"
+
+    while true; do
+        case "${1}" in
+            -h | --help)
+                usage
+                exit
+                ;;
+
+            -c | --context)
+                KUBECTL_DOC_CONTEXT="${2}"
+                shift 2
+                ;;
+
+            -- ) shift; break ;;
+            * ) break ;;
+        esac
+    done
+
+    manifest="${1}"
+    line="${2:-}"
+    path="$(jsonpath "${manifest}" "${line}")"
+
+    if ! out="$(k8s explain "${path}" 2>&1)"; then
+        error "Failed to get documentation"
+        echo
+        echo "Path: ${path}"
+        echo
+        echo "ERROR"
+        echo
+        pr -to 2 <<< "${out}"
+        return 1
+    fi
+
+    echo "PATH:       ${path}"
+    echo "${out}"
+}
+
+main "${@}"; exit

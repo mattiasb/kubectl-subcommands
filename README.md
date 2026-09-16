@@ -76,6 +76,13 @@ Show several types of resources like multiple calls to `kubectl get` would but
 with nice formatting, and with highlighting of certain errors. Also has a watch
 flag for following changes to these resources.
 
+### `kubect doc`
+
+Show `kubectl explain` documentation for the field at a specific line of a
+manifest.
+
+Useful for integration in your text editor.
+
 ## Configuration
 
 You might want to make BASH ignore `kubectl-` and `kubectl_` sub-commands when
