@@ -9,14 +9,6 @@ function error {
     echo "ERROR: ${*}" >/dev/stderr
 }
 
-function os-flavor {
-    # Make a subshell to avoid leaking variables
-    # shellcheck disable=SC1091
-    ( source /etc/os-release
-      echo "${ID_LIKE:-${ID:-unknown-linux}}"
-    )
-}
-
 function missing-commands {
     for cmd in "${@}"; do
         if ! command -v "${cmd}" &>/dev/null; then
