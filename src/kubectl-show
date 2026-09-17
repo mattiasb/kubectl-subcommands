@@ -3,10 +3,12 @@
 set -euo pipefail
 
 : "${KUBECTL_SHOW_WATCH_FLAGS:=-tcw}"
+: "${KUBECTL_SHOW_SELECTOR:=}"
 : "${KUBECTL_SHOW_CONTEXT:=}"
 : "${KUBECTL_SHOW_NAMESPACE:=}"
 
 export KUBECTL_SHOW_WATCH_FLAGS
+export KUBECTL_SHOW_SELECTOR
 export KUBECTL_SHOW_CONTEXT
 export KUBECTL_SHOW_NAMESPACE
 
@@ -66,7 +68,9 @@ function k8s-show {
         echo
         echo "${resource^^}"
         echo
-        k8s get "${resource}" | sed 's/^/  /'
+        k8s get "${resource}"                                                  \
+            ${KUBECTL_SHOW_SELECTOR:+--selector="${KUBECTL_SHOW_SELECTOR}"}    \
+            | sed 's/^/  /'
     done | highlight starterror error failed fail
 }
 
@@ -105,12 +109,13 @@ function usage {
     cat <<EOM
 Usage: $(basename "${0}") [-h | --help] <RESOURCE>...
 
-  -h, --help            Show this help message.
-  -w, --watch           Watch for changes.
-  -c, --context=<CTX>   Override current context.
-  -n, --namespace=<NS>  Override current context namespace.
-      --[no-]header     Show a context and namespace header.
-                        Default: true in watch mode and false otherwise.
+  -h, --help              Show this help message.
+  -w, --watch             Watch for changes.
+  -c, --context=<CTX>     Override current context.
+  -n, --namespace=<NS>    Override current context namespace.
+  -l, --selector=<QUERY>  Filter resources by a label query.
+      --[no-]header       Show a context and namespace header.
+                          Default: true in watch mode and false otherwise.
 
 Environment:
 
@@ -127,12 +132,13 @@ function main {
     local -a flags=()
 
     name="$(basename "${0}")"
-    opts="hwn:c:"
-    long="help,watch,header,no-header,namespace:,context:"
+    opts="hwn:c:l:"
+    long="help,watch,header,no-header,namespace:,context:selector:,"
     o="$(getopt -o "${opts}" -l "${long}" -n "${name}" -- "${@}")"
     eval set -- "${o}"
 
     opt_watch=false
+    opt_selector=""
     while true; do
         case "${1}" in
             -h | --help)
@@ -152,6 +158,11 @@ function main {
 
             -c | --context)
                 KUBECTL_SHOW_CONTEXT="${2}"
+                shift 2
+                ;;
+
+            -l | --selector)
+                KUBECTL_SHOW_SELECTOR="${2}"
                 shift 2
                 ;;
 
