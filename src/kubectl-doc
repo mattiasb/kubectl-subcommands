@@ -46,6 +46,10 @@ function k8s {
     kubectl ${KUBECTL_DOC_CONTEXT:+--context="${KUBECTL_DOC_CONTEXT}"} "${@}"
 }
 
+function k8s-logged-in {
+    kubectl --request-timeout 1.5s auth whoami &>/dev/null
+}
+
 ################################################################################
 ## Main
 
@@ -90,6 +94,11 @@ function main {
             * ) break ;;
         esac
     done
+
+    if ! k8s-logged-in; then
+        error "Not logged in!"
+        return 1
+    fi
 
     manifest="${1}"
     line="${2:-}"
