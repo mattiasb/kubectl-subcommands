@@ -133,12 +133,11 @@ function main {
 
     name="$(basename "${0}")"
     opts="hwn:c:l:"
-    long="help,watch,header,no-header,namespace:,context:selector:,"
+    long="help,watch,header,no-header,namespace:,context:,selector:"
     o="$(getopt -o "${opts}" -l "${long}" -n "${name}" -- "${@}")"
     eval set -- "${o}"
 
     opt_watch=false
-    opt_selector=""
     while true; do
         case "${1}" in
             -h | --help)
